@@ -1,0 +1,623 @@
+---
+// src/components/Itinerario.astro
+// Itinerario de la fiesta, como el diseño: el pergamino
+// (/imagenes/pergamino.webp) sobre el cielo de estrellas del Calendario
+// (/imagenes/fondocalendario.webp), con "ITINERARIO · DE MI FIESTA" y la
+// línea de tiempo: la hora a la izquierda, un medallón violeta con su ícono
+// dorado y el nombre del momento con una frase corta. Va debajo del Código
+// de vestimenta.
+//
+// El pergamino se arma con border-image: los rollos de arriba y abajo
+// quedan con su forma y solo el papel del medio se alarga, así entran
+// todos los momentos sin apretarlos, sea cual sea el largo de la lista.
+// ── DATOS EDITABLES ───────────────────────────────────────────
+const titulo = "Itinerario";
+const subtitulo = "De mi fiesta";
+/*
+   imagen: ícono de /iconos/ (dibujo de línea que se pinta de dorado).
+   Si un momento no tiene imagen, usa el ícono dibujado de `iconos`
+   (más abajo) con el nombre de `icono`.
+*/
+const momentos = [
+    { hora: "18:00", nombre: "Puertas abiertas", frase: "Bienvenidos a esta noche mágica.", icono: "puerta" },
+    { hora: "18:30", nombre: "Recepción", frase: "Recibimos a nuestros reales invitados.", imagen: "/iconos/bandeja.webp" },
+    { hora: "19:30", nombre: "Ingreso de la quinceañera", frase: "El gran momento. Comienza la noche.", imagen: "/iconos/tiara.webp" },
+    { hora: "19:45", nombre: "Vals", frase: "Un baile que marca el comienzo de mi historia.", imagen: "/iconos/vals.webp" },
+    { hora: "20:30", nombre: "Brindis", frase: "Alzamos las copas por los sueños cumplidos.", imagen: "/iconos/copas.webp" },
+    { hora: "20:45", nombre: "Baile sorpresa", frase: "Algo especial que no te puedes perder.", imagen: "/iconos/mascara.webp" },
+    { hora: "21:30", nombre: "Hora loca", frase: "A disfrutar, cantar y bailar toda la noche.", imagen: "/iconos/musica.webp" },
+    { hora: "00:00", nombre: "Torta", frase: "Un dulce momento para compartir.", imagen: "/iconos/torta.webp" },
+    { hora: "02:00", nombre: "Fin de la fiesta", frase: "Gracias por ser parte de mi sueño.", imagen: "/iconos/luna.webp" },
+];
+// ──────────────────────────────────────────────────────────────
+
+/*
+   Íconos dorados de trazo, dibujados en una caja de 24x24. Cada uno es
+   una lista de trazos (path d=...).
+*/
+const iconos: Record<string, string[]> = {
+    puerta: [
+        "M6 21V9a6 6 0 0 1 12 0v12",
+        "M3.5 21h17",
+        "M12 3v18",
+        "M10 13.5v1.5M14 13.5v1.5",
+    ],
+    corona: [
+        "M4 17 3 7l5 4 4-6 4 6 5-4-1 10z",
+        "M4 20h16",
+        "M12 11.5v.01",
+    ],
+    tiara: [
+        "M3 16c3-1.5 6-2.2 9-2.2s6 .7 9 2.2",
+        "M5 15 7 9l2.5 4L12 6l2.5 7L17 9l2 6",
+        "M12 6V4.5",
+        "M12 3.2v.01",
+    ],
+    vals: [
+        "M8.5 5.5a1.6 1.6 0 1 0 0-.01",
+        "M15.5 5.5a1.6 1.6 0 1 0 0-.01",
+        "M8.5 8v4l-3 9h6l-3-9",
+        "M15.5 8v13",
+        "M8.5 10.5l3.5-1 3.5 1",
+        "M15.5 21l-1.5-5M15.5 21l1.5-5",
+    ],
+    copas: [
+        "M5 3h5l-.5 5a2 2 0 0 1-4 0z",
+        "M14 3h5l-.5 5a2 2 0 0 1-4 0z",
+        "M7.5 10v8M16.5 10v8",
+        "M5 21h5M14 21h5",
+        "M7.5 18 7.5 21M16.5 18v3",
+        "M12 2v2M10.8 4.5l-.8-.8M13.2 4.5l.8-.8",
+    ],
+    estrella: [
+        "M12 3l2.4 6.1L21 9.8l-5 4.3 1.6 6.6L12 17.3l-5.6 3.4L8 14.1 3 9.8l6.6-.7z",
+    ],
+    musica: [
+        "M9 18V5l11-2v13",
+        "M6 18a3 3 0 1 0 6 0 3 3 0 1 0-6 0",
+        "M17 16a3 3 0 1 0 6 0 3 3 0 1 0-6 0",
+        "M9 9l11-2",
+    ],
+    torta: [
+        "M4 21h16",
+        "M5 21v-6h14v6",
+        "M7 15v-4h10v4",
+        "M5 18c1.4 1 2.8 1 4.2 0s2.8-1 4.2 0 2.8 1 4.2 0",
+        "M12 11V8",
+        "M12 6.3c.9-.7.9-1.8 0-3-.9 1.2-.9 2.3 0 3z",
+    ],
+    luna: [
+        "M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z",
+        "M17 3.5v3M15.5 5h3",
+        "M20.5 8.5v2M19.5 9.5h2",
+    ],
+};
+
+// Estrellitas y destellos del fondo: calculados acá para que servidor y
+// navegador dibujen exactamente lo mismo.
+const estrellas = Array.from({ length: 26 }, (_, i) => ({
+    izq: (i * 41 + 3) % 100,
+    tam: 2 + (i % 4) * 1.1,
+    dur: 9 + ((i * 5) % 8),
+    retraso: (i * 1.1) % 14,
+    deriva: ((i * 13) % 30) - 15,
+    oro: i % 3 === 1,
+}));
+
+const destellos = Array.from({ length: 8 }, (_, i) => ({
+    izq: (i % 2 === 0 ? 2 : 91) + ((i * 7) % 6),
+    arriba: 6 + ((i * 23) % 88),
+    tam: 8 + (i % 3) * 4,
+    dur: 2.6 + (i % 4) * 0.7,
+    retraso: (i * 0.8) % 4,
+}));
+---
+
+<section id="itinerario" class="seccion">
+    <div class="estrellas" aria-hidden="true">
+        {
+            estrellas.map((e) => (
+                <span
+                    class:list={["estrella", { oro: e.oro }]}
+                    style={`left:${e.izq}%; width:${e.tam}px; height:${e.tam}px; --deriva:${e.deriva}px; animation-duration:${e.dur}s; animation-delay:-${e.retraso}s;`}
+                />
+            ))
+        }
+        {
+            destellos.map((d) => (
+                <span
+                    class="destello"
+                    style={`left:${d.izq}%; top:${d.arriba}%; width:${d.tam}px; height:${d.tam}px; animation-duration:${d.dur}s; animation-delay:-${d.retraso}s;`}
+                />
+            ))
+        }
+    </div>
+
+    <div class="pergamino" id="it-pergamino">
+        <div class="encabezado">
+            <h2 class="titulo">{titulo}</h2>
+            <p class="subtitulo">
+                <i class="rulo" aria-hidden="true"></i>
+                <span>{subtitulo}</span>
+                <i class="rulo derecho" aria-hidden="true"></i>
+            </p>
+        </div>
+
+        <ol class="linea" id="it-linea">
+            {
+                momentos.map((m) => (
+                    <li class="momento">
+                        <span class="hora">
+                            {m.hora}
+                            <small>hs</small>
+                        </span>
+                        <span class="medallon" aria-hidden="true">
+                            {m.imagen ? (
+                                <span
+                                    class="icono-img"
+                                    style={`--ic:url('${m.imagen}')`}
+                                />
+                            ) : (
+                                <svg
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="url(#it-oro)"
+                                    stroke-width="1.6"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                >
+                                    {(
+                                        iconos[m.icono ?? "estrella"] ??
+                                        iconos.estrella
+                                    ).map((d) => (
+                                        <path d={d} />
+                                    ))}
+                                </svg>
+                            )}
+                        </span>
+                        <span class="texto">
+                            <strong class="nombre">{m.nombre}</strong>
+                            <span class="frase">{m.frase}</span>
+                        </span>
+                    </li>
+                ))
+            }
+        </ol>
+
+        <!-- El degradado dorado de los íconos, definido una sola vez -->
+        <svg width="0" height="0" class="defs" aria-hidden="true">
+            <defs>
+                <linearGradient id="it-oro" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0" stop-color="#fff1c8"></stop>
+                    <stop offset="0.5" stop-color="#e8c06c"></stop>
+                    <stop offset="1" stop-color="#b8863a"></stop>
+                </linearGradient>
+            </defs>
+        </svg>
+    </div>
+</section>
+
+<style>
+    /*
+       Mismo cielo que el Calendario, fundido con negro arriba y abajo
+       para empalmar con el marco de Vestimenta y con Solo adultos. Va
+       como degradado y no como color: el modo oscuro forzado oscurece
+       colores pero respeta las imágenes.
+    */
+    .seccion {
+        position: relative;
+        width: 100%;
+        overflow: hidden;
+        container-type: inline-size;
+        padding: 8cqw 0 10cqw;
+        background-image:
+            linear-gradient(
+                180deg,
+                #0b0310 0%,
+                rgba(11, 3, 16, 0) 10%,
+                rgba(11, 3, 16, 0) 90%,
+                #0b0310 100%
+            ),
+            url("/imagenes/fondocalendario.webp");
+        background-size: 100% 100%, cover;
+        background-repeat: no-repeat;
+        background-position: center, center;
+        background-color: #12051f;
+    }
+
+    /* ── Estrellitas que suben + destellos ──────────────────── */
+    .estrellas {
+        position: absolute;
+        inset: 0;
+        overflow: hidden;
+        pointer-events: none;
+        container-type: size;
+    }
+
+    .estrella {
+        position: absolute;
+        bottom: -2%;
+        border-radius: 50%;
+        background-image: radial-gradient(
+            circle,
+            #ffffff 0%,
+            rgba(220, 170, 255, 0.9) 40%,
+            rgba(190, 110, 255, 0) 72%
+        );
+        box-shadow: 0 0 6px rgba(210, 150, 255, 0.85);
+        opacity: 0;
+        animation: flotar linear infinite;
+    }
+
+    .estrella.oro {
+        background-image: radial-gradient(
+            circle,
+            #ffffff 0%,
+            rgba(255, 225, 160, 0.9) 40%,
+            rgba(255, 200, 110, 0) 72%
+        );
+        box-shadow: 0 0 6px rgba(255, 215, 140, 0.85);
+    }
+
+    @keyframes flotar {
+        0% {
+            transform: translate(0, 0) scale(0.6);
+            opacity: 0;
+        }
+        10% {
+            opacity: 0.95;
+        }
+        50% {
+            transform: translate(var(--deriva), -50cqh) scale(1);
+        }
+        85% {
+            opacity: 0.6;
+        }
+        100% {
+            transform: translate(calc(var(--deriva) * -0.5), -100cqh)
+                scale(0.8);
+            opacity: 0;
+        }
+    }
+
+    .destello {
+        position: absolute;
+        transform: translate(-50%, -50%) scale(0);
+        animation: titilar ease-in-out infinite;
+    }
+
+    .destello::before,
+    .destello::after {
+        content: "";
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        border-radius: 50%;
+        transform: translate(-50%, -50%);
+        background-image: radial-gradient(
+            ellipse,
+            #fff 0%,
+            rgba(255, 222, 150, 0.9) 35%,
+            rgba(255, 222, 150, 0) 70%
+        );
+    }
+
+    .destello::before {
+        width: 100%;
+        height: 18%;
+    }
+
+    .destello::after {
+        width: 18%;
+        height: 100%;
+    }
+
+    @keyframes titilar {
+        0%,
+        100% {
+            transform: translate(-50%, -50%) scale(0);
+            opacity: 0;
+        }
+        50% {
+            transform: translate(-50%, -50%) scale(1.5);
+            opacity: 1;
+        }
+    }
+
+    /* ── Pergamino ──────────────────────────────────────────── */
+    /*
+       La imagen es de 900x1599: el rollo de arriba ocupa 200px y el de
+       abajo 176px. border-image corta esas dos franjas y las deja con su
+       forma; el papel del medio (fill) se estira lo que haga falta.
+       El pergamino mide el 94% de la sección, así que los rollos miden
+       200/900 y 176/900 de ese ancho.
+    */
+    .pergamino {
+        position: relative;
+        z-index: 1;
+        width: 94%;
+        margin: 0 auto;
+        box-sizing: border-box;
+        border-style: solid;
+        border-width: calc(94cqw * 200 / 900) 0 calc(94cqw * 176 / 900) 0;
+        border-image: url("/imagenes/pergamino.webp") 200 0 176 0 fill /
+            calc(94cqw * 200 / 900) 0 calc(94cqw * 176 / 900) 0 stretch;
+        /* Los bordes rotos del papel están al 13% y 87% del ancho */
+        padding: 4cqw 15% 6cqw;
+        filter: drop-shadow(0 14px 26px rgba(0, 0, 0, 0.6))
+            drop-shadow(0 0 22px rgba(190, 90, 255, 0.25));
+        color: #3b2412;
+    }
+
+    .defs {
+        position: absolute;
+    }
+
+    /* ── Encabezado ─────────────────────────────────────────── */
+    .encabezado {
+        text-align: center;
+        margin-bottom: 6cqw;
+    }
+
+    .titulo {
+        margin: 0;
+        font-family: "Cormorant Garamond", serif;
+        font-weight: 700;
+        font-size: 10cqw;
+        line-height: 1;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        background-image: linear-gradient(
+            180deg,
+            #6a1fa8 0%,
+            #3d1763 100%
+        );
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+    }
+
+    .subtitulo {
+        margin: 2cqw 0 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 2.5cqw;
+        font-family: "Cormorant Garamond", serif;
+        font-weight: 700;
+        font-size: 4.4cqw;
+        text-transform: uppercase;
+        letter-spacing: 0.14em;
+        color: #8a5a1c;
+    }
+
+    /* Rulitos dorados a los costados de "DE MI FIESTA" */
+    .rulo {
+        display: block;
+        width: 11cqw;
+        height: 1.5px;
+        background-image: linear-gradient(
+            90deg,
+            rgba(184, 134, 58, 0),
+            #b8863a
+        );
+        position: relative;
+    }
+
+    .rulo::after {
+        content: "";
+        position: absolute;
+        right: -1cqw;
+        top: 50%;
+        width: 1.8cqw;
+        height: 1.8cqw;
+        transform: translateY(-50%) rotate(45deg);
+        background-image: linear-gradient(135deg, #e8c06c, #b8863a);
+    }
+
+    .rulo.derecho {
+        transform: scaleX(-1);
+    }
+
+    /* ── Línea de tiempo ────────────────────────────────────── */
+    /*
+       Tres columnas: hora | medallón | texto. La línea dorada vertical
+       pasa por detrás de los medallones (columna del medio).
+    */
+    .linea {
+        position: relative;
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 4.2cqw;
+        --col-hora: 13cqw;
+        --medallon: 11.5cqw;
+    }
+
+    .linea::before {
+        content: "";
+        position: absolute;
+        top: calc(var(--medallon) / 2);
+        bottom: calc(var(--medallon) / 2);
+        left: calc(var(--col-hora) + 2cqw + var(--medallon) / 2);
+        width: 1.5px;
+        transform: translateX(-50%);
+        background-image: linear-gradient(
+            180deg,
+            rgba(184, 134, 58, 0.3),
+            #b8863a 12%,
+            #b8863a 88%,
+            rgba(184, 134, 58, 0.3)
+        );
+    }
+
+    .momento {
+        position: relative;
+        display: grid;
+        grid-template-columns: var(--col-hora) var(--medallon) 1fr;
+        column-gap: 2cqw;
+        align-items: center;
+    }
+
+    .hora {
+        font-family: "Cormorant Garamond", serif;
+        font-weight: 700;
+        font-size: 3.9cqw;
+        line-height: 1;
+        text-align: right;
+        color: #4a2a10;
+        font-variant-numeric: lining-nums tabular-nums;
+        white-space: nowrap;
+    }
+
+    .hora small {
+        font-size: 0.72em;
+        margin-left: 0.15em;
+    }
+
+    /* Medallón violeta con filete dorado, como en el diseño */
+    .medallon {
+        position: relative;
+        width: var(--medallon);
+        height: var(--medallon);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-image: radial-gradient(
+            circle at 35% 30%,
+            #5d2391 0%,
+            #33104f 60%,
+            #1e0830 100%
+        );
+        border: 1.5px solid #d6a957;
+        box-shadow:
+            0 0 0 2px rgba(214, 169, 87, 0.25),
+            0 3px 8px rgba(40, 10, 60, 0.45);
+    }
+
+    .medallon svg {
+        width: 62%;
+        height: 62%;
+        overflow: visible;
+    }
+
+    /*
+       Los íconos de /iconos/ son dibujos de línea negra: se usan como
+       máscara y se pintan con el degradado dorado, así combinan con el
+       medallón violeta. Un brillo suave los despega del fondo.
+    */
+    .icono-img {
+        display: block;
+        width: 74%;
+        height: 74%;
+        -webkit-mask-image: var(--ic);
+        mask-image: var(--ic);
+        -webkit-mask-size: contain;
+        mask-size: contain;
+        -webkit-mask-repeat: no-repeat;
+        mask-repeat: no-repeat;
+        -webkit-mask-position: center;
+        mask-position: center;
+        background-image: linear-gradient(
+            180deg,
+            #fff1c8 0%,
+            #e8c06c 50%,
+            #c99442 100%
+        );
+        filter: drop-shadow(0 0 2px rgba(255, 215, 140, 0.55));
+    }
+
+    .texto {
+        display: flex;
+        flex-direction: column;
+        gap: 0.6cqw;
+        min-width: 0;
+    }
+
+    .nombre {
+        font-family: "Cormorant Garamond", serif;
+        font-weight: 700;
+        font-size: 4.3cqw;
+        line-height: 1.1;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+        color: #3d1763;
+    }
+
+    .frase {
+        font-family: "Cormorant Garamond", serif;
+        font-style: italic;
+        font-weight: 600;
+        font-size: 3.6cqw;
+        line-height: 1.2;
+        color: #5a3a1c;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .estrella {
+            display: none;
+        }
+        .destello {
+            animation: none;
+            transform: translate(-50%, -50%) scale(1);
+            opacity: 0.7;
+        }
+    }
+</style>
+
+<script>
+    import { gsap } from "gsap";
+    import { ScrollTrigger } from "gsap/ScrollTrigger";
+
+    gsap.registerPlugin(ScrollTrigger);
+
+    document.addEventListener("DOMContentLoaded", () => {
+        const pergamino = document.getElementById("it-pergamino");
+        const linea = document.getElementById("it-linea");
+        if (
+            !pergamino ||
+            !linea ||
+            window.matchMedia("(prefers-reduced-motion: reduce)").matches
+        )
+            return;
+
+        // El pergamino aparece y después cada momento, uno tras otro,
+        // a medida que se baja por la lista
+        gsap.fromTo(
+            pergamino,
+            { opacity: 0, y: 30 },
+            {
+                opacity: 1,
+                y: 0,
+                duration: 1.1,
+                ease: "power2.out",
+                scrollTrigger: {
+                    trigger: pergamino,
+                    start: "top 85%",
+                    toggleActions: "play none none reset",
+                },
+            },
+        );
+
+        linea.querySelectorAll<HTMLElement>(".momento").forEach((m) => {
+            gsap.fromTo(
+                m,
+                { opacity: 0, x: -14 },
+                {
+                    opacity: 1,
+                    x: 0,
+                    duration: 0.7,
+                    ease: "power2.out",
+                    scrollTrigger: {
+                        trigger: m,
+                        start: "top 88%",
+                        toggleActions: "play none none reset",
+                    },
+                },
+            );
+        });
+    });
+</script>

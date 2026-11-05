@@ -26,3 +26,7 @@ pnpm-debug.log*
 # datos privados de clientes: no se publican
 información.txt
 *.txt
+
+# originales sin comprimir: se usan sus versiones .webp
+public/imagenes/pergamino.png
+public/iconos/iconos (*).png
