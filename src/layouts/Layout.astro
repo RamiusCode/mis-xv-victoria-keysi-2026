@@ -22,7 +22,15 @@ const { title } = Astro.props;
 */
 const miniatura = new URL('/imagenes/miniatura-whatsapp.jpg', Astro.site).href;
 const paginaActual = new URL(Astro.url.pathname, Astro.site).href;
-const tituloPreview = 'Victoria Keysi | Mis XV años';
+/*
+   Al compartir el link se quiere SOLO la imagen, sin texto. WhatsApp
+   siempre pone un título y, si falta og:title, usa el <title> de la
+   pestaña. Por eso el título de la vista previa es un carácter en blanco
+   (U+2800): la tarjeta queda con la imagen sola. La pestaña del navegador
+   sigue con su título normal.
+*/
+const tituloPreview = '⠀';
+const textoImagen = 'Victoria Keysi, mis XV años';
 ---
 
 <!doctype html>
@@ -37,7 +45,6 @@ const tituloPreview = 'Victoria Keysi | Mis XV años';
 
     <!-- ── Vista previa al compartir el link ─────────────────── -->
     <meta property="og:type" content="website" />
-    <meta property="og:site_name" content={tituloPreview} />
     <meta property="og:title" content={tituloPreview} />
     <meta property="og:url" content={paginaActual} />
     <meta property="og:image" content={miniatura} />
@@ -45,7 +52,7 @@ const tituloPreview = 'Victoria Keysi | Mis XV años';
     <meta property="og:image:type" content="image/jpeg" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
-    <meta property="og:image:alt" content={tituloPreview} />
+    <meta property="og:image:alt" content={textoImagen} />
     <meta property="og:locale" content="es_ES" />
 
     <meta name="twitter:card" content="summary_large_image" />
