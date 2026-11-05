@@ -8,7 +8,8 @@
 // Regalo.
 // ── DATOS EDITABLES ───────────────────────────────────────────
 const titulo = "Confirma asistencia";
-const aviso = "Por favor confirmar asistencia antes del 25 de Octubre";
+// Cada elemento es un renglón: la fecha va sola en el suyo
+const aviso = ["Por favor confirmar asistencia antes del", "21 de noviembre"];
 const textoBoton = "Confirmar";
 /*
    WhatsApp donde llegan las confirmaciones: con código de país y sin el
@@ -94,17 +95,21 @@ const destellos = Array.from({ length: 7 }, (_, i) => ({
                entera en un span que no se corta, así el texto ya ocupa su
                lugar final desde el principio y no salta al escribirse.
             -->
-            <p class="aviso" id="as-aviso" aria-label={aviso}>
+            <p class="aviso" id="as-aviso" aria-label={aviso.join(" ")}>
                 {
-                    aviso.split(" ").map((palabra, i) => (
-                        <>
-                            {i > 0 && " "}
-                            <span class="palabra" aria-hidden="true">
-                                {palabra.split("").map((c) => (
-                                    <span class="letra">{c}</span>
-                                ))}
-                            </span>
-                        </>
+                    aviso.map((renglon) => (
+                        <span style="display:block">
+                            {renglon.split(" ").map((palabra, i) => (
+                                <>
+                                    {i > 0 && " "}
+                                    <span class="palabra" aria-hidden="true">
+                                        {palabra.split("").map((c) => (
+                                            <span class="letra">{c}</span>
+                                        ))}
+                                    </span>
+                                </>
+                            ))}
+                        </span>
                     ))
                 }
             </p>
