@@ -16,13 +16,24 @@ const textoBoton = "Confirmar";
    lleva a ningún lado.
 */
 const telefono = "59169983473"; // Bolivia (591) + 69983473
-const mensaje =
-    "Me complace confirmar mi asistencia a los 15 años de Victoria Keysi, que se realizará el día sábado 28 de noviembre. Estaré sin falta, muchas gracias.";
+/*
+   Mensaje corto con el nombre del invitado. {nombre} se reemplaza por lo
+   que escribe en el campo de arriba del botón. Si lo deja vacío, va
+   "(mi nombre)" para que lo complete en WhatsApp antes de enviar.
+*/
+const plantilla =
+    "Soy {nombre} y será un honor acompañarte en tus XV años. ¡Confirmo mi asistencia!";
+const textoCampo = "Escribe tu nombre";
+const nombreVacio = "(mi nombre)";
 // ──────────────────────────────────────────────────────────────
 
-const enlace = telefono
-    ? `https://wa.me/${telefono}?text=${encodeURIComponent(mensaje)}`
-    : "#";
+// El mismo armado lo usa el script al tocar el botón: así el enlace sin
+// nombre (si el script no corre) y el de con nombre salen iguales.
+const armarEnlace = (nombre: string) =>
+    telefono
+        ? `https://wa.me/${telefono}?text=${encodeURIComponent(plantilla.replace("{nombre}", nombre))}`
+        : "#";
+const enlace = armarEnlace(nombreVacio);
 
 // Estrellitas y destellos: calculados acá para que servidor y navegador
 // dibujen exactamente lo mismo.
@@ -99,11 +110,28 @@ const destellos = Array.from({ length: 7 }, (_, i) => ({
             </p>
         </div>
 
+        <!-- El nombre del invitado: va dentro del mensaje de WhatsApp -->
+        <div class="campo">
+            <label for="as-nombre" class="campo-etiqueta">{textoCampo}</label>
+            <input
+                id="as-nombre"
+                type="text"
+                class="campo-input"
+                autocomplete="name"
+                maxlength="60"
+                placeholder="Nombre y apellido"
+            />
+        </div>
+
         <a
             href={enlace}
             target="_blank"
             rel="noopener"
             class="boton"
+            id="as-boton"
+            data-telefono={telefono}
+            data-plantilla={plantilla}
+            data-vacio={nombreVacio}
         >
             {textoBoton}
         </a>
@@ -369,6 +397,58 @@ const destellos = Array.from({ length: 7 }, (_, i) => ({
         }
     }
 
+    /* ── Campo del nombre ───────────────────────────────────── */
+    .campo {
+        width: 74%;
+        margin-top: 6cqw;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 2cqw;
+    }
+
+    .campo-etiqueta {
+        font-family: "Cormorant Garamond", serif;
+        font-style: italic;
+        font-weight: 600;
+        font-size: 5cqw;
+        color: #f3e6ff;
+        text-shadow: 0 1px 4px rgba(0, 0, 0, 0.7);
+    }
+
+    /*
+       font-size de al menos 16px: con menos, el iPhone hace zoom a la
+       página al tocar el campo.
+    */
+    .campo-input {
+        width: 100%;
+        box-sizing: border-box;
+        padding: 2.4cqw 4cqw;
+        border-radius: 999px;
+        border: 1.5px solid #e2bb6c;
+        background-image: linear-gradient(
+            rgba(250, 245, 255, 0.95),
+            rgba(250, 245, 255, 0.95)
+        );
+        font-family: "Cormorant Garamond", serif;
+        font-weight: 600;
+        font-size: max(16px, 4.8cqw);
+        text-align: center;
+        color: #3d1763;
+        outline: none;
+        box-shadow: 0 0 14px rgba(190, 90, 255, 0.35);
+    }
+
+    .campo-input::placeholder {
+        color: rgba(61, 23, 99, 0.45);
+    }
+
+    .campo-input:focus {
+        box-shadow:
+            0 0 0 3px rgba(226, 187, 108, 0.35),
+            0 0 18px rgba(200, 110, 255, 0.6);
+    }
+
     .boton:active {
         transform: scale(0.97);
     }
@@ -405,6 +485,33 @@ const destellos = Array.from({ length: 7 }, (_, i) => ({
     gsap.registerPlugin(ScrollTrigger);
 
     document.addEventListener("DOMContentLoaded", () => {
+        /*
+           Al tocar Confirmar, el mensaje se arma con el nombre que escribió
+           el invitado. Va antes de todo lo demás para que funcione aunque
+           el visitante haya pedido menos movimiento.
+        */
+        const boton = document.getElementById(
+            "as-boton",
+        ) as HTMLAnchorElement | null;
+        const campo = document.getElementById(
+            "as-nombre",
+        ) as HTMLInputElement | null;
+        if (boton && campo && boton.dataset.telefono) {
+            const armar = () => {
+                const nombre =
+                    campo.value.trim().replace(/\s+/g, " ") ||
+                    (boton.dataset.vacio ?? "");
+                const texto = (boton.dataset.plantilla ?? "").replace(
+                    "{nombre}",
+                    nombre,
+                );
+                boton.href = `https://wa.me/${boton.dataset.telefono}?text=${encodeURIComponent(texto)}`;
+            };
+            // Se actualiza mientras escribe: el enlace siempre está listo
+            campo.addEventListener("input", armar);
+            boton.addEventListener("click", armar);
+        }
+
         const contenido = document.getElementById("as-contenido");
         if (
             !contenido ||
