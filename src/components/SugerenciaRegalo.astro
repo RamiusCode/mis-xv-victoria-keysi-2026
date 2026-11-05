@@ -1,0 +1,288 @@
+---
+// src/components/SugerenciaRegalo.astro
+// Regalo de los XV, como el diseño: la imagen completa de la rosa en la
+// campana (/imagenes/regalo.webp) y encima los textos: "REGALO" en el
+// cartel de arriba y la frase debajo de la campana. Con estrellitas
+// subiendo y destellos.
+//
+// La imagen se muestra entera con su proporción y los textos se ubican en
+// % encima, así quedan en el mismo lugar en cualquier celular.
+// ── DATOS EDITABLES ───────────────────────────────────────────
+const titulo = "Regalo";
+const frase = [
+    "Tu presencia es el regalo",
+    "más importante para mí;",
+    "sin aun así quieres regalarme",
+    "algo, puedes hacerlo aquí abajo.",
+];
+// ──────────────────────────────────────────────────────────────
+
+// Estrellitas y destellos: calculados acá para que servidor y navegador
+// dibujen exactamente lo mismo.
+const estrellas = Array.from({ length: 20 }, (_, i) => ({
+    izq: 12 + ((i * 41) % 76),
+    tam: 2 + (i % 4) * 1.1,
+    dur: 9 + ((i * 5) % 8),
+    retraso: (i * 1.1) % 14,
+    deriva: ((i * 13) % 30) - 15,
+}));
+
+const destellos = Array.from({ length: 6 }, (_, i) => ({
+    izq: 14 + ((i * 47) % 72),
+    arriba: 16 + ((i * 31) % 50),
+    tam: 8 + (i % 3) * 4,
+    dur: 2.6 + (i % 4) * 0.7,
+    retraso: (i * 0.8) % 4,
+}));
+---
+
+<section id="regalo" class="seccion">
+    <img
+        src="/imagenes/regalo.webp"
+        alt=""
+        aria-hidden="true"
+        width="900"
+        height="1687"
+        class="fondo"
+        loading="lazy"
+    />
+
+    <div class="estrellas" aria-hidden="true">
+        {
+            estrellas.map((e) => (
+                <span
+                    class="estrella"
+                    style={`left:${e.izq}%; width:${e.tam}px; height:${e.tam}px; --deriva:${e.deriva}px; animation-duration:${e.dur}s; animation-delay:-${e.retraso}s;`}
+                />
+            ))
+        }
+        {
+            destellos.map((d) => (
+                <span
+                    class="destello"
+                    style={`left:${d.izq}%; top:${d.arriba}%; width:${d.tam}px; height:${d.tam}px; animation-duration:${d.dur}s; animation-delay:-${d.retraso}s;`}
+                />
+            ))
+        }
+    </div>
+
+    <div class="capa" id="rg-capa">
+        <h2 class="titulo">{titulo}</h2>
+        <p class="frase">
+            {frase.map((l) => <span>{l}</span>)}
+        </p>
+    </div>
+</section>
+
+<style>
+    /*
+       container-type deja medir los textos contra el ancho de la sección.
+       El fondo va como degradado y no como color: el modo oscuro forzado
+       oscurece colores pero respeta las imágenes.
+    */
+    .seccion {
+        position: relative;
+        width: 100%;
+        overflow: hidden;
+        container-type: inline-size;
+        background-image: linear-gradient(#0b0310, #0b0310);
+    }
+
+    .fondo {
+        display: block;
+        width: 100%;
+        height: auto;
+        aspect-ratio: 900 / 1687;
+        user-select: none;
+        -webkit-user-drag: none;
+    }
+
+    /* ── Estrellitas que suben + destellos ──────────────────── */
+    .estrellas {
+        position: absolute;
+        inset: 0;
+        overflow: hidden;
+        pointer-events: none;
+        container-type: size;
+    }
+
+    .estrella {
+        position: absolute;
+        bottom: 6%;
+        border-radius: 50%;
+        background-image: radial-gradient(
+            circle,
+            #ffffff 0%,
+            rgba(255, 225, 160, 0.9) 40%,
+            rgba(255, 200, 110, 0) 72%
+        );
+        box-shadow: 0 0 6px rgba(255, 215, 140, 0.85);
+        opacity: 0;
+        animation: flotar linear infinite;
+    }
+
+    @keyframes flotar {
+        0% {
+            transform: translate(0, 0) scale(0.6);
+            opacity: 0;
+        }
+        10% {
+            opacity: 0.95;
+        }
+        50% {
+            transform: translate(var(--deriva), -42cqh) scale(1);
+        }
+        85% {
+            opacity: 0.6;
+        }
+        100% {
+            transform: translate(calc(var(--deriva) * -0.5), -84cqh)
+                scale(0.8);
+            opacity: 0;
+        }
+    }
+
+    .destello {
+        position: absolute;
+        transform: translate(-50%, -50%) scale(0);
+        animation: titilar ease-in-out infinite;
+    }
+
+    .destello::before,
+    .destello::after {
+        content: "";
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        border-radius: 50%;
+        transform: translate(-50%, -50%);
+        background-image: radial-gradient(
+            ellipse,
+            #fff 0%,
+            rgba(255, 222, 150, 0.9) 35%,
+            rgba(255, 222, 150, 0) 70%
+        );
+    }
+
+    .destello::before {
+        width: 100%;
+        height: 18%;
+    }
+
+    .destello::after {
+        width: 18%;
+        height: 100%;
+    }
+
+    @keyframes titilar {
+        0%,
+        100% {
+            transform: translate(-50%, -50%) scale(0);
+            opacity: 0;
+        }
+        50% {
+            transform: translate(-50%, -50%) scale(1.5);
+            opacity: 1;
+        }
+    }
+
+    /* ── Textos encima de la imagen ─────────────────────────── */
+    .capa {
+        position: absolute;
+        inset: 0;
+        z-index: 1;
+        text-align: center;
+    }
+
+    /* "REGALO" dentro del cartel dorado de arriba */
+    .titulo {
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 9.4%;
+        margin: 0;
+        font-family: "Cormorant Garamond", serif;
+        font-weight: 600;
+        font-size: 8cqw;
+        line-height: 1;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        background-image: linear-gradient(
+            180deg,
+            #fff3cf 0%,
+            #f1cb7a 50%,
+            #b98a3e 100%
+        );
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.6));
+    }
+
+    /* La frase, en el aire entre la campana y la línea de abajo */
+    .frase {
+        position: absolute;
+        left: 10%;
+        right: 10%;
+        top: 75.5%;
+        margin: 0;
+        font-family: "Cormorant Garamond", serif;
+        font-weight: 600;
+        font-size: 5.3cqw;
+        line-height: 1.3;
+        color: #ffffff;
+        text-shadow:
+            0 1px 4px rgba(0, 0, 0, 0.7),
+            0 0 10px rgba(150, 60, 210, 0.5);
+    }
+
+    .frase span {
+        display: block;
+    }
+
+
+    @media (prefers-reduced-motion: reduce) {
+        .estrella {
+            display: none;
+        }
+        .destello {
+            animation: none;
+            transform: translate(-50%, -50%) scale(1);
+            opacity: 0.7;
+        }
+    }
+</style>
+
+<script>
+    import { gsap } from "gsap";
+    import { ScrollTrigger } from "gsap/ScrollTrigger";
+
+    gsap.registerPlugin(ScrollTrigger);
+
+    document.addEventListener("DOMContentLoaded", () => {
+        const capa = document.getElementById("rg-capa");
+        if (
+            !capa ||
+            window.matchMedia("(prefers-reduced-motion: reduce)").matches
+        )
+            return;
+
+        // Título y frase aparecen uno tras otro
+        gsap.fromTo(
+            Array.from(capa.children),
+            { opacity: 0, y: 16 },
+            {
+                opacity: 1,
+                y: 0,
+                duration: 1,
+                stagger: 0.25,
+                ease: "power2.out",
+                scrollTrigger: {
+                    trigger: capa,
+                    start: "top 75%",
+                    toggleActions: "play none none reset",
+                },
+            },
+        );
+    });
+</script>

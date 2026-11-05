@@ -1,0 +1,460 @@
+---
+// src/components/Asistencia.astro
+// Confirmación de asistencia de los XV, como el diseño: "Asistencia" en
+// Great Vibes, el sobre abierto con rosas (/imagenes/sobre2.webp) con el
+// aviso escrito sobre el papel, el botón "Confirmar" (abre WhatsApp) y el
+// nombre con la manzana (/imagenes/nombre.webp) abajo. Sobre el mismo cielo
+// de estrellas del Calendario, con estrellitas subiendo. Va debajo del
+// Regalo.
+// ── DATOS EDITABLES ───────────────────────────────────────────
+const titulo = "Confirma asistencia";
+const aviso = "Por favor confirmar asistencia antes del 25 de Octubre";
+const textoBoton = "Confirmar";
+/*
+   WhatsApp donde llegan las confirmaciones: con código de país y sin el
+   + ni espacios (ej. 5917xxxxxxx). Mientras esté vacío, el botón no
+   lleva a ningún lado.
+*/
+const telefono = "59169983473"; // Bolivia (591) + 69983473
+const mensaje =
+    "Me complace confirmar mi asistencia a los 15 años de Victoria Keysi, que se realizará el día sábado 28 de noviembre. Estaré sin falta, muchas gracias.";
+// ──────────────────────────────────────────────────────────────
+
+const enlace = telefono
+    ? `https://wa.me/${telefono}?text=${encodeURIComponent(mensaje)}`
+    : "#";
+
+// Estrellitas y destellos: calculados acá para que servidor y navegador
+// dibujen exactamente lo mismo.
+const estrellas = Array.from({ length: 24 }, (_, i) => ({
+    izq: (i * 41 + 9) % 100,
+    tam: 2 + (i % 4) * 1.1,
+    dur: 9 + ((i * 5) % 8),
+    retraso: (i * 1.1) % 14,
+    deriva: ((i * 13) % 30) - 15,
+    oro: i % 3 === 1,
+}));
+
+const destellos = Array.from({ length: 7 }, (_, i) => ({
+    izq: 6 + ((i * 47) % 88),
+    arriba: 6 + ((i * 31) % 88),
+    tam: 8 + (i % 3) * 4,
+    dur: 2.6 + (i % 4) * 0.7,
+    retraso: (i * 0.8) % 4,
+}));
+---
+
+<section id="asistencia" class="seccion">
+    <div class="estrellas" aria-hidden="true">
+        {
+            estrellas.map((e) => (
+                <span
+                    class:list={["estrella", { oro: e.oro }]}
+                    style={`left:${e.izq}%; width:${e.tam}px; height:${e.tam}px; --deriva:${e.deriva}px; animation-duration:${e.dur}s; animation-delay:-${e.retraso}s;`}
+                />
+            ))
+        }
+        {
+            destellos.map((d) => (
+                <span
+                    class="destello"
+                    style={`left:${d.izq}%; top:${d.arriba}%; width:${d.tam}px; height:${d.tam}px; animation-duration:${d.dur}s; animation-delay:-${d.retraso}s;`}
+                />
+            ))
+        }
+    </div>
+
+    <div class="contenido" id="as-contenido">
+        <h2 class="titulo">{titulo}</h2>
+
+        <!-- El sobre con el aviso escrito sobre el papel -->
+        <div class="sobre">
+            <img
+                src="/imagenes/sobre2.webp"
+                alt=""
+                aria-hidden="true"
+                width="800"
+                height="1018"
+                class="sobre-img"
+                loading="lazy"
+            />
+            <!--
+               El aviso se escribe solo, letra por letra. Cada palabra va
+               entera en un span que no se corta, así el texto ya ocupa su
+               lugar final desde el principio y no salta al escribirse.
+            -->
+            <p class="aviso" id="as-aviso" aria-label={aviso}>
+                {
+                    aviso.split(" ").map((palabra, i) => (
+                        <>
+                            {i > 0 && " "}
+                            <span class="palabra" aria-hidden="true">
+                                {palabra.split("").map((c) => (
+                                    <span class="letra">{c}</span>
+                                ))}
+                            </span>
+                        </>
+                    ))
+                }
+            </p>
+        </div>
+
+        <a
+            href={enlace}
+            target="_blank"
+            rel="noopener"
+            class="boton"
+        >
+            {textoBoton}
+        </a>
+
+        <img
+            src="/imagenes/nombre.webp"
+            alt="Victoria Keysi, mis XV años"
+            width="800"
+            height="363"
+            class="nombre"
+            loading="lazy"
+        />
+    </div>
+</section>
+
+<style>
+    /*
+       Mismo cielo que el Calendario. Arriba se funde con negro para
+       empalmar con el marco del Regalo. El fondo va como degradado y no
+       como color: el modo oscuro forzado oscurece colores pero respeta
+       las imágenes.
+    */
+    .seccion {
+        position: relative;
+        width: 100%;
+        overflow: hidden;
+        container-type: inline-size;
+        background-image:
+            linear-gradient(
+                180deg,
+                #0b0310 0%,
+                rgba(11, 3, 16, 0) 14%
+            ),
+            url("/imagenes/fondocalendario.webp");
+        background-size: 100% 100%, cover;
+        background-repeat: no-repeat;
+        background-position: center, center;
+        background-color: #12051f;
+        text-align: center;
+    }
+
+    .contenido {
+        position: relative;
+        z-index: 1;
+        padding: 10cqw 0 10cqw;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    /* ── Estrellitas que suben + destellos ──────────────────── */
+    .estrellas {
+        position: absolute;
+        inset: 0;
+        overflow: hidden;
+        pointer-events: none;
+        container-type: size;
+    }
+
+    .estrella {
+        position: absolute;
+        bottom: -2%;
+        border-radius: 50%;
+        background-image: radial-gradient(
+            circle,
+            #ffffff 0%,
+            rgba(220, 170, 255, 0.9) 40%,
+            rgba(190, 110, 255, 0) 72%
+        );
+        box-shadow: 0 0 6px rgba(210, 150, 255, 0.85);
+        opacity: 0;
+        animation: flotar linear infinite;
+    }
+
+    .estrella.oro {
+        background-image: radial-gradient(
+            circle,
+            #ffffff 0%,
+            rgba(255, 225, 160, 0.9) 40%,
+            rgba(255, 200, 110, 0) 72%
+        );
+        box-shadow: 0 0 6px rgba(255, 215, 140, 0.85);
+    }
+
+    @keyframes flotar {
+        0% {
+            transform: translate(0, 0) scale(0.6);
+            opacity: 0;
+        }
+        10% {
+            opacity: 0.95;
+        }
+        50% {
+            transform: translate(var(--deriva), -50cqh) scale(1);
+        }
+        85% {
+            opacity: 0.6;
+        }
+        100% {
+            transform: translate(calc(var(--deriva) * -0.5), -100cqh)
+                scale(0.8);
+            opacity: 0;
+        }
+    }
+
+    .destello {
+        position: absolute;
+        transform: translate(-50%, -50%) scale(0);
+        animation: titilar ease-in-out infinite;
+    }
+
+    .destello::before,
+    .destello::after {
+        content: "";
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        border-radius: 50%;
+        transform: translate(-50%, -50%);
+        background-image: radial-gradient(
+            ellipse,
+            #fff 0%,
+            rgba(255, 222, 150, 0.9) 35%,
+            rgba(255, 222, 150, 0) 70%
+        );
+    }
+
+    .destello::before {
+        width: 100%;
+        height: 18%;
+    }
+
+    .destello::after {
+        width: 18%;
+        height: 100%;
+    }
+
+    @keyframes titilar {
+        0%,
+        100% {
+            transform: translate(-50%, -50%) scale(0);
+            opacity: 0;
+        }
+        50% {
+            transform: translate(-50%, -50%) scale(1.5);
+            opacity: 1;
+        }
+    }
+
+    /* ── Título ─────────────────────────────────────────────── */
+    /* Great Vibes, sin mayúsculas forzadas ni espaciado entre letras */
+    .titulo {
+        margin: 0;
+        font-family: "Great Vibes", cursive;
+        font-weight: 400;
+        font-size: 13cqw;
+        line-height: 1.1;
+        color: #ffffff;
+        text-shadow:
+            0 0 10px rgba(255, 255, 255, 0.35),
+            0 0 24px rgba(190, 120, 255, 0.6);
+    }
+
+    /* ── Sobre ──────────────────────────────────────────────── */
+    .sobre {
+        position: relative;
+        width: 74%;
+        margin-top: 5cqw;
+    }
+
+    .sobre-img {
+        display: block;
+        width: 100%;
+        height: auto;
+        filter: drop-shadow(0 14px 26px rgba(0, 0, 0, 0.55))
+            drop-shadow(0 0 20px rgba(200, 90, 255, 0.35));
+    }
+
+    /*
+       El aviso va sobre el papel del sobre: el papel ocupa del 13% al 87%
+       del ancho y del 14% al 60% del alto de la imagen. El texto se ubica
+       en la parte de arriba del papel, como en el diseño.
+    */
+    .aviso {
+        position: absolute;
+        left: 20%;
+        right: 20%;
+        top: 22%;
+        margin: 0;
+        font-family: "Cormorant Garamond", serif;
+        font-style: italic;
+        font-weight: 600;
+        font-size: 5cqw;
+        line-height: 1.3;
+        color: #3d1763;
+    }
+
+    .palabra {
+        white-space: nowrap;
+    }
+
+    .letra {
+        display: inline-block;
+    }
+
+    /* ── Botón ──────────────────────────────────────────────── */
+    /* El mismo botón de la Recepción: violeta con doble filete dorado */
+    .boton {
+        position: relative;
+        overflow: hidden;
+        display: inline-block;
+        margin-top: 6cqw;
+        padding: 2.6cqw 11cqw;
+        border-radius: 999px;
+        font-family: "Cormorant Garamond", serif;
+        font-weight: 700;
+        font-size: 5.6cqw;
+        color: #fff4d8;
+        text-decoration: none;
+        text-shadow: 0 1px 3px rgba(30, 0, 60, 0.6);
+        background-image:
+            radial-gradient(
+                ellipse at 50% 0%,
+                rgba(255, 255, 255, 0.28) 0%,
+                rgba(255, 255, 255, 0) 60%
+            ),
+            linear-gradient(180deg, #9447d8 0%, #5b1a96 55%, #3a0c66 100%);
+        border: 1.5px solid #f0cf86;
+        box-shadow:
+            inset 0 0 0 3px rgba(58, 12, 102, 0.9),
+            inset 0 0 0 4px rgba(240, 207, 134, 0.55),
+            0 8px 18px rgba(0, 0, 0, 0.45),
+            0 0 18px rgba(190, 90, 255, 0.55);
+        transition: transform 0.25s ease;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    .boton::after {
+        content: "";
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: -60%;
+        width: 40%;
+        background-image: linear-gradient(
+            100deg,
+            rgba(255, 255, 255, 0) 0%,
+            rgba(255, 244, 216, 0.55) 50%,
+            rgba(255, 255, 255, 0) 100%
+        );
+        transform: skewX(-20deg);
+        animation: cruzar 4s ease-in-out infinite;
+        pointer-events: none;
+    }
+
+    @keyframes cruzar {
+        0% {
+            left: -60%;
+        }
+        40%,
+        100% {
+            left: 130%;
+        }
+    }
+
+    .boton:active {
+        transform: scale(0.97);
+    }
+
+    /* ── Nombre con la manzana, abajo ───────────────────────── */
+    .nombre {
+        display: block;
+        width: 80%;
+        height: auto;
+        margin-top: 12cqw;
+        filter: drop-shadow(0 4px 14px rgba(0, 0, 0, 0.6))
+            drop-shadow(0 0 18px rgba(200, 100, 255, 0.35));
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .estrella {
+            display: none;
+        }
+        .destello,
+        .boton::after {
+            animation: none;
+        }
+        .destello {
+            transform: translate(-50%, -50%) scale(1);
+            opacity: 0.7;
+        }
+    }
+</style>
+
+<script>
+    import { gsap } from "gsap";
+    import { ScrollTrigger } from "gsap/ScrollTrigger";
+
+    gsap.registerPlugin(ScrollTrigger);
+
+    document.addEventListener("DOMContentLoaded", () => {
+        const contenido = document.getElementById("as-contenido");
+        if (
+            !contenido ||
+            window.matchMedia("(prefers-reduced-motion: reduce)").matches
+        )
+            return;
+
+        // Título, sobre, botón y nombre aparecen uno tras otro
+        gsap.fromTo(
+            Array.from(contenido.children),
+            { opacity: 0, y: 20 },
+            {
+                opacity: 1,
+                y: 0,
+                duration: 1,
+                stagger: 0.2,
+                ease: "power2.out",
+                scrollTrigger: {
+                    trigger: contenido,
+                    start: "top 80%",
+                    toggleActions: "play none none reset",
+                },
+            },
+        );
+
+        /*
+           El aviso del papel se escribe letra por letra, como a mano,
+           cuando el sobre ya está a la vista. Cada letra aparece con un
+           pequeño desliz hacia arriba.
+        */
+        const aviso = document.getElementById("as-aviso");
+        if (aviso) {
+            const letras = aviso.querySelectorAll(".letra");
+            gsap.fromTo(
+                letras,
+                { opacity: 0, y: 4 },
+                {
+                    opacity: 1,
+                    y: 0,
+                    duration: 0.25,
+                    stagger: 0.05,
+                    ease: "power1.out",
+                    delay: 0.6,
+                    scrollTrigger: {
+                        trigger: aviso,
+                        start: "top 75%",
+                        toggleActions: "play none none reset",
+                    },
+                },
+            );
+        }
+    });
+</script>

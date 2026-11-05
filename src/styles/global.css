@@ -1,0 +1,7 @@
+@import "tailwindcss";
+
+/*
+   Las únicas dos fuentes de la invitación son Great Vibes (títulos) y
+   Cormorant Garamond (textos y números). Se cargan con un solo pedido a
+   Google en Layout.astro y cada componente las nombra en su CSS.
+*/

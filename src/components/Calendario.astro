@@ -1,0 +1,517 @@
+---
+// src/components/Calendario.astro
+// El día de la fiesta sobre el cielo de estrellas (/imagenes/fondocalendario.webp):
+// "Viernes", la fecha y la hora, el mes con el día marcado por un corazón,
+// "Toca para agendar" (abre Google Calendar), "Preparate" y la cuenta
+// regresiva. Va debajo de la Dedicatoria.
+//
+// Todo se mide en cqw (% del ancho de la sección): las proporciones del
+// diseño se mantienen en cualquier celular.
+// ── DATOS EDITABLES ───────────────────────────────────────────
+const diaSemana = "Sábado";
+// La fiesta: sábado 28 de noviembre de 2026, 18:00 (mes 10 porque enero es 0)
+const anio = 2026;
+const mes = 10;
+const dia = 28;
+const hora = "18:00";
+const nombreMes = "Noviembre";
+const textoHora = "Hora: 18:00";
+const textoAgendar = "Toca para agendar";
+const tituloFinal = "Preparate";
+const textoFaltan = "SOLO FALTAN";
+// Cómo aparece el evento en el calendario del invitado
+const tituloEvento = "Mis XV años - Victoria Keysi";
+// ──────────────────────────────────────────────────────────────
+
+// Semana de lunes a domingo, como en el diseño
+const cabeceras = ["LU", "MA", "MI", "JU", "VI", "SA", "DO"];
+
+/*
+   La grilla se arma sola con la fecha: así el mes siempre cae en el día
+   de la semana correcto. getDay() da 0 al domingo; con (+6) % 7 el lunes
+   pasa a ser la primera columna.
+*/
+const primerDia = (new Date(anio, mes, 1).getDay() + 6) % 7;
+const diasDelMes = new Date(anio, mes + 1, 0).getDate();
+
+const celdas: (number | null)[] = [
+    ...Array(primerDia).fill(null),
+    ...Array.from({ length: diasDelMes }, (_, i) => i + 1),
+];
+while (celdas.length % 7 !== 0) celdas.push(null);
+
+/*
+   La fecha y hora se arman una sola vez y de acá salen tanto la cuenta
+   regresiva como el enlace para agendar. Van sin zona horaria: se toman
+   en la hora del celular del invitado.
+*/
+const dos = (n: number) => String(n).padStart(2, "0");
+const fechaIso = `${anio}-${dos(mes + 1)}-${dos(dia)}T${hora}:00`;
+const compacta = (d: Date) =>
+    `${d.getFullYear()}${dos(d.getMonth() + 1)}${dos(d.getDate())}T${dos(d.getHours())}${dos(d.getMinutes())}00`;
+const inicio = new Date(fechaIso);
+const fin = new Date(inicio.getTime() + 6 * 60 * 60 * 1000); // 6 horas de fiesta
+const enlaceAgendar =
+    "https://calendar.google.com/calendar/render?action=TEMPLATE" +
+    `&text=${encodeURIComponent(tituloEvento)}` +
+    `&dates=${compacta(inicio)}/${compacta(fin)}`;
+
+// Estrellitas que suben por detrás. Calculadas acá para que servidor y
+// navegador dibujen exactamente lo mismo.
+const estrellas = Array.from({ length: 30 }, (_, i) => ({
+    izq: (i * 37) % 100,
+    tam: 2 + (i % 4) * 1.1,
+    dur: 9 + ((i * 3) % 8),
+    retraso: (i * 0.9) % 14,
+    deriva: ((i * 17) % 36) - 18,
+    oro: i % 3 === 0,
+}));
+
+// Rótulos debajo de cada número de la cuenta regresiva
+const unidades = [
+    { u: "d", rotulo: "Días" },
+    { u: "h", rotulo: "Horas" },
+    { u: "m", rotulo: "Minutos" },
+    { u: "s", rotulo: "Segundos" },
+];
+---
+
+<section id="calendario" class="seccion">
+    <!-- Estrellitas flotando hacia arriba, detrás de todo -->
+    <div class="estrellas" aria-hidden="true">
+        {
+            estrellas.map((e) => (
+                <span
+                    class:list={["estrella", { oro: e.oro }]}
+                    style={`left:${e.izq}%; width:${e.tam}px; height:${e.tam}px; --deriva:${e.deriva}px; animation-duration:${e.dur}s; animation-delay:-${e.retraso}s;`}
+                />
+            ))
+        }
+    </div>
+
+    <div class="contenido" id="cal-contenido">
+        <h2 class="dia-semana">{diaSemana}</h2>
+
+        <p class="fecha">
+            <span class="fecha-dia">{dia}</span>
+            <span class="fecha-mes">{nombreMes}</span>
+            <span class="fecha-anio">{anio}</span>
+        </p>
+
+        <p class="hora">{textoHora}</p>
+
+        <!-- El mes: tocar en cualquier parte abre Google Calendar -->
+        <a
+            href={enlaceAgendar}
+            target="_blank"
+            rel="noopener"
+            class="mes"
+            aria-label={`Agendar el ${dia} de ${nombreMes} de ${anio} en el calendario`}
+        >
+            <div class="cabecera">
+                {cabeceras.map((c) => <span>{c}</span>)}
+            </div>
+            <div class="grilla">
+                {
+                    celdas.map((n) =>
+                        n === dia ? (
+                            <span class="celda marcado">
+                                <svg viewBox="0 0 24 22" class="corazon" aria-hidden="true">
+                                    <path d="M12 21.2s-8.6-5.3-10.7-10.2A6 6 0 0 1 12 4.8a6 6 0 0 1 10.7 6.2c-2.1 4.9-10.7 10.2-10.7 10.2z" />
+                                </svg>
+                                <span class="oculto-visual">{n}</span>
+                            </span>
+                        ) : (
+                            <span class="celda">{n ?? ""}</span>
+                        ),
+                    )
+                }
+            </div>
+            <span class="agendar">{textoAgendar}</span>
+        </a>
+
+        <h2 class="preparate">{tituloFinal}</h2>
+        <p class="faltan">{textoFaltan}</p>
+
+        <!-- Días : horas : minutos : segundos -->
+        <div class="cuenta" id="cal-cuenta" data-fecha={fechaIso}>
+            {
+                unidades.map((x, i) => (
+                    <>
+                        {i > 0 && <i class="dos-puntos">:</i>}
+                        <div class="unidad">
+                            <span class="numero" data-u={x.u}>00</span>
+                            <span class="rotulo">{x.rotulo}</span>
+                        </div>
+                    </>
+                ))
+            }
+        </div>
+    </div>
+</section>
+
+<style>
+    /*
+       El cielo cubre toda la sección y el alto lo da el contenido. Arriba
+       arranca del mismo negro con que termina el marco de la Dedicatoria,
+       así no hay corte entre las dos.
+    */
+    .seccion {
+        position: relative;
+        width: 100%;
+        container-type: inline-size;
+        background-image:
+            linear-gradient(
+                180deg,
+                #08020c 0%,
+                rgba(8, 2, 12, 0) 14%,
+                rgba(13, 4, 24, 0) 90%,
+                #0d0418 100%
+            ),
+            url("/imagenes/fondocalendario.webp");
+        background-size: 100% 100%, cover;
+        background-repeat: no-repeat;
+        background-position: top, center;
+        background-color: #12051f;
+        color: #ffffff;
+        text-align: center;
+    }
+
+    /* ── Estrellitas que suben ──────────────────────────────── */
+    .estrellas {
+        position: absolute;
+        inset: 0;
+        overflow: hidden;
+        pointer-events: none;
+        container-type: size;
+    }
+
+    .estrella {
+        position: absolute;
+        bottom: -2%;
+        border-radius: 50%;
+        background-image: radial-gradient(
+            circle,
+            #ffffff 0%,
+            rgba(220, 170, 255, 0.9) 40%,
+            rgba(190, 110, 255, 0) 72%
+        );
+        box-shadow: 0 0 6px rgba(210, 150, 255, 0.85);
+        opacity: 0;
+        animation: flotar linear infinite;
+    }
+
+    .estrella.oro {
+        background-image: radial-gradient(
+            circle,
+            #ffffff 0%,
+            rgba(255, 225, 160, 0.9) 40%,
+            rgba(255, 200, 110, 0) 72%
+        );
+        box-shadow: 0 0 6px rgba(255, 215, 140, 0.85);
+    }
+
+    /* Suben hasta arriba de la sección meciéndose un poco de costado */
+    @keyframes flotar {
+        0% {
+            transform: translate(0, 0) scale(0.6);
+            opacity: 0;
+        }
+        10% {
+            opacity: 0.95;
+        }
+        50% {
+            transform: translate(var(--deriva), -50cqh) scale(1);
+        }
+        85% {
+            opacity: 0.6;
+        }
+        100% {
+            transform: translate(calc(var(--deriva) * -0.5), -100cqh)
+                scale(0.8);
+            opacity: 0;
+        }
+    }
+
+    .contenido {
+        position: relative;
+        z-index: 1;
+        padding: 10cqw 0 12cqw;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    /* Great Vibes, sin mayúsculas forzadas ni espaciado entre letras */
+    .dia-semana,
+    .preparate {
+        margin: 0;
+        font-family: "Great Vibes", cursive;
+        font-weight: 400;
+        line-height: 1;
+        color: #ffffff;
+        text-shadow:
+            0 0 10px rgba(255, 255, 255, 0.35),
+            0 0 24px rgba(190, 120, 255, 0.55);
+    }
+
+    .dia-semana {
+        font-size: 23cqw;
+    }
+
+    /* 6 | NOVIEMBRE | 2026 */
+    .fecha {
+        margin: 2cqw 0 0;
+        display: flex;
+        align-items: center;
+        font-family: "Cormorant Garamond", serif;
+        font-weight: 500;
+        line-height: 1;
+    }
+
+    .fecha > span {
+        padding: 0 2.4cqw;
+    }
+
+    .fecha-dia {
+        font-size: 9.5cqw;
+    }
+
+    .fecha-mes {
+        font-size: 6.6cqw;
+        text-transform: uppercase;
+        border-left: 1px solid rgba(255, 255, 255, 0.85);
+        border-right: 1px solid rgba(255, 255, 255, 0.85);
+    }
+
+    .fecha-anio {
+        font-size: 8.4cqw;
+    }
+
+    .hora {
+        margin: 3.5cqw 0 0;
+        font-family: "Cormorant Garamond", serif;
+        font-weight: 700;
+        font-size: 7.4cqw;
+        line-height: 1;
+        color: #ffffff;
+        text-shadow:
+            0 0 8px rgba(255, 255, 255, 0.45),
+            0 0 18px rgba(200, 120, 255, 0.75);
+    }
+
+    /* ── El mes ─────────────────────────────────────────────── */
+    .mes {
+        display: block;
+        width: 74%;
+        margin-top: 5cqw;
+        color: inherit;
+        text-decoration: none;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    .cabecera,
+    .grilla {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+    }
+
+    .cabecera {
+        padding: 1.2cqw 0;
+        background-image: linear-gradient(
+            rgba(222, 205, 245, 0.78),
+            rgba(222, 205, 245, 0.78)
+        );
+        font-family: "Cormorant Garamond", serif;
+        font-weight: 600;
+        font-size: 3.6cqw;
+        color: #6b4a99;
+    }
+
+    /* Números en la misma Cormorant del resto, con cifras parejas */
+    .grilla {
+        margin-top: 1.5cqw;
+        row-gap: 1.2cqw;
+        font-family: "Cormorant Garamond", serif;
+        font-variant-numeric: lining-nums tabular-nums;
+        font-weight: 600;
+        font-size: 4.9cqw;
+        text-shadow: 0 0 6px rgba(200, 140, 255, 0.5);
+    }
+
+    .celda {
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 7.4cqw;
+    }
+
+    .corazon {
+        width: 8.6cqw;
+        height: auto;
+        fill: #f6a9c9;
+        filter: drop-shadow(0 0 6px rgba(255, 160, 210, 0.8));
+        animation: latir 1.6s ease-in-out infinite;
+    }
+
+    @keyframes latir {
+        0%,
+        100% {
+            transform: scale(1);
+        }
+        15% {
+            transform: scale(1.16);
+        }
+        30% {
+            transform: scale(1);
+        }
+        45% {
+            transform: scale(1.1);
+        }
+    }
+
+    .oculto-visual {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip: rect(0 0 0 0);
+        white-space: nowrap;
+    }
+
+    .agendar {
+        display: block;
+        margin-top: 4cqw;
+        font-family: "Cormorant Garamond", serif;
+        font-weight: 500;
+        font-size: 3.9cqw;
+        opacity: 0.9;
+    }
+
+    /* ── Preparate + cuenta ─────────────────────────────────── */
+    .preparate {
+        margin-top: 7cqw;
+        font-size: 20cqw;
+    }
+
+    .faltan {
+        margin: 0;
+        align-self: flex-end;
+        margin-right: 22%;
+        margin-top: -1cqw;
+        font-family: "Cormorant Garamond", serif;
+        font-weight: 500;
+        font-size: 4.2cqw;
+        letter-spacing: 0.04em;
+    }
+
+    .cuenta {
+        margin: 5cqw 0 0;
+        display: flex;
+        align-items: flex-start;
+        gap: 2.4cqw;
+        font-family: "Cormorant Garamond", serif;
+        font-variant-numeric: lining-nums tabular-nums;
+        font-weight: 500;
+        font-size: 10.5cqw;
+        line-height: 1;
+        font-variant-numeric: tabular-nums;
+        letter-spacing: 0.06em;
+        text-shadow: 0 0 12px rgba(200, 140, 255, 0.5);
+    }
+
+    .unidad {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .rotulo {
+        margin-top: 2cqw;
+        font-family: "Cormorant Garamond", serif;
+        font-weight: 600;
+        font-size: 3.4cqw;
+        letter-spacing: 0.06em;
+        text-shadow: none;
+        opacity: 0.9;
+    }
+
+    /* Los dos puntos se alinean con los números, no con los rótulos */
+    .dos-puntos {
+        align-self: flex-start;
+        font-style: normal;
+        font-size: 0.8em;
+        line-height: 1.2;
+        opacity: 0.9;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .corazon {
+            animation: none;
+        }
+        .estrella {
+            display: none;
+        }
+    }
+</style>
+
+<script>
+    import { gsap } from "gsap";
+    import { ScrollTrigger } from "gsap/ScrollTrigger";
+
+    gsap.registerPlugin(ScrollTrigger);
+
+    document.addEventListener("DOMContentLoaded", () => {
+        // ── Cuenta regresiva ────────────────────────────────────
+        const cuenta = document.getElementById("cal-cuenta");
+        if (cuenta) {
+            const destino = new Date(cuenta.dataset.fecha ?? "").getTime();
+            const casilla = (u: string) =>
+                cuenta.querySelector<HTMLElement>(`[data-u="${u}"]`);
+            const d = casilla("d");
+            const h = casilla("h");
+            const m = casilla("m");
+            const s = casilla("s");
+            const dos = (n: number) => String(n).padStart(2, "0");
+
+            const pintar = () => {
+                const resto = Math.max(0, destino - Date.now());
+                const seg = Math.floor(resto / 1000);
+                if (d) d.textContent = dos(Math.floor(seg / 86400));
+                if (h) h.textContent = dos(Math.floor((seg % 86400) / 3600));
+                if (m) m.textContent = dos(Math.floor((seg % 3600) / 60));
+                if (s) s.textContent = dos(seg % 60);
+                // Ya llegó el día: todo en cero, y no hace falta seguir
+                if (resto === 0) clearInterval(reloj);
+            };
+            const reloj = setInterval(pintar, 1000);
+            pintar();
+        }
+
+        // ── Entrada: los bloques aparecen uno tras otro ─────────
+        const contenido = document.getElementById("cal-contenido");
+        if (
+            !contenido ||
+            window.matchMedia("(prefers-reduced-motion: reduce)").matches
+        )
+            return;
+
+        gsap.fromTo(
+            Array.from(contenido.children),
+            { opacity: 0, y: 18 },
+            {
+                opacity: 1,
+                y: 0,
+                duration: 0.9,
+                stagger: 0.15,
+                ease: "power2.out",
+                scrollTrigger: {
+                    trigger: contenido,
+                    start: "top 80%",
+                    toggleActions: "play none none reset",
+                },
+            },
+        );
+    });
+</script>

@@ -1,0 +1,634 @@
+---
+// src/components/RecepcionSocial.astro
+// La recepción de los XV, como el diseño: fondo violeta con nebulosas
+// rosas (/imagenes/fondodireccion.webp) y estrellitas subiendo; el título
+// "Recepción Social" en dorado; la tarjeta lavanda enmarcada en dorado con
+// la foto del salón, el nombre resaltado, la dirección, la hora y el botón
+// "Ver Ubicación"; y la manzana con la A en la esquina de abajo a la
+// derecha, montada sobre la tarjeta. Va debajo del Calendario.
+//
+// Todo se mide en cqw (% del ancho de la sección).
+import fs from "node:fs";
+
+// ── DATOS EDITABLES ───────────────────────────────────────────
+const titulo = "Recepción Social";
+const tipoSalon = "Salón de eventos";
+const nombreSalon = "Serpabi";
+const direccion =
+    "Colcapirhua km. 9 Avenida Blanco Galindo, calle Sucre final, Cochabamba";
+const hora = "Hora: 18:00";
+const textoBoton = "Ver Ubicación";
+
+/*
+   Link de Google Maps del salón. Mientras esté vacío, el botón busca la
+   dirección en Maps (ya funciona). Cuando llegue el link, va acá.
+*/
+const enlaceMapa = "";
+// ──────────────────────────────────────────────────────────────
+
+/*
+   Foto del salón: se usa salon.webp (comprimida) si está, si no
+   salon.png. Si no hay ninguna, la tarjeta se arma sin foto y no queda
+   un hueco vacío.
+*/
+const fotoSalon = ["salon.webp", "salon.png", "salon.jpg"]
+    .map((n) => `/imagenes/${n}`)
+    .find((ruta) => fs.existsSync(`public${ruta}`));
+
+const mapa =
+    enlaceMapa ||
+    "https://www.google.com/maps/search/?api=1&query=" +
+        encodeURIComponent(`${tipoSalon} ${nombreSalon}, ${direccion}`);
+
+// Estrellitas que suben y destellos: calculados acá para que servidor y
+// navegador dibujen exactamente lo mismo.
+const estrellas = Array.from({ length: 26 }, (_, i) => ({
+    izq: (i * 41 + 7) % 100,
+    tam: 2 + (i % 4) * 1.1,
+    dur: 9 + ((i * 5) % 8),
+    retraso: (i * 1.1) % 14,
+    deriva: ((i * 13) % 36) - 18,
+    oro: i % 3 === 1,
+}));
+
+const destellos = Array.from({ length: 7 }, (_, i) => ({
+    izq: 6 + ((i * 47) % 88),
+    arriba: 6 + ((i * 31) % 88),
+    tam: 8 + (i % 3) * 4,
+    dur: 2.6 + (i % 4) * 0.7,
+    retraso: (i * 0.8) % 4,
+}));
+---
+
+<section id="recepcion" class="seccion">
+    <div class="estrellas" aria-hidden="true">
+        {
+            estrellas.map((e) => (
+                <span
+                    class:list={["estrella", { oro: e.oro }]}
+                    style={`left:${e.izq}%; width:${e.tam}px; height:${e.tam}px; --deriva:${e.deriva}px; animation-duration:${e.dur}s; animation-delay:-${e.retraso}s;`}
+                />
+            ))
+        }
+        {
+            destellos.map((d) => (
+                <span
+                    class="destello"
+                    style={`left:${d.izq}%; top:${d.arriba}%; width:${d.tam}px; height:${d.tam}px; animation-duration:${d.dur}s; animation-delay:-${d.retraso}s;`}
+                />
+            ))
+        }
+    </div>
+
+    <div class="contenido" id="rec-contenido">
+        <div class="titulo-caja">
+            <span class="destello-titulo" aria-hidden="true"></span>
+            <h2 class="titulo">{titulo}</h2>
+        </div>
+
+        <div class="tarjeta-caja">
+            <div class="tarjeta">
+                {
+                    fotoSalon && (
+                        <div class="foto-marco">
+                            <img
+                                src={fotoSalon}
+                                alt={`${tipoSalon} ${nombreSalon}`}
+                                class="foto"
+                                loading="lazy"
+                            />
+                        </div>
+                    )
+                }
+
+                <!-- Tipo y nombre del salón juntos, al mismo tamaño -->
+                <p class="salon">
+                    {tipoSalon} <span class="nombre">“{nombreSalon}”</span>
+                </p>
+                <span class="adorno" aria-hidden="true"><i></i></span>
+
+                <p class="direccion">{direccion}</p>
+
+                <p class="hora"><span>{hora}</span></p>
+
+                <!-- El pin violeta sobre el botón, como en el diseño -->
+                <span class="pin" aria-hidden="true">
+                    <svg viewBox="0 0 24 24">
+                        <path
+                            d="M12 2a7 7 0 0 0-7 7c0 5.2 7 13 7 13s7-7.8 7-13a7 7 0 0 0-7-7zm0 9.6A2.6 2.6 0 1 1 12 6.4a2.6 2.6 0 0 1 0 5.2z"
+                        ></path>
+                    </svg>
+                </span>
+
+                <a href={mapa} target="_blank" rel="noopener" class="boton">
+                    {textoBoton}
+                </a>
+            </div>
+
+            <!-- Manzana con la A: esquina de abajo a la derecha -->
+            <img
+                src="/imagenes/manzana.webp"
+                alt=""
+                aria-hidden="true"
+                width="310"
+                height="354"
+                class="manzana"
+                id="rec-manzana"
+                loading="lazy"
+            />
+        </div>
+    </div>
+</section>
+
+<style>
+    /*
+       Fondo violeta con nebulosas rosas. Arriba se funde con el violeta
+       oscuro con que termina el Calendario, así no se ve el corte.
+    */
+    .seccion {
+        position: relative;
+        width: 100%;
+        overflow: hidden;
+        container-type: inline-size;
+        background-image:
+            linear-gradient(
+                180deg,
+                #0d0418 0%,
+                rgba(13, 4, 24, 0) 12%
+            ),
+            url("/imagenes/fondodireccion.webp");
+        background-size: 100% 100%, cover;
+        background-repeat: no-repeat;
+        background-position: center, center;
+        background-color: #2a0c45;
+        text-align: center;
+    }
+
+    .contenido {
+        position: relative;
+        z-index: 1;
+        padding: 10cqw 0 16cqw;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    /* ── Estrellitas que suben + destellos ──────────────────── */
+    .estrellas {
+        position: absolute;
+        inset: 0;
+        overflow: hidden;
+        pointer-events: none;
+        container-type: size;
+    }
+
+    .estrella {
+        position: absolute;
+        bottom: -2%;
+        border-radius: 50%;
+        background-image: radial-gradient(
+            circle,
+            #ffffff 0%,
+            rgba(255, 170, 235, 0.9) 40%,
+            rgba(240, 110, 220, 0) 72%
+        );
+        box-shadow: 0 0 6px rgba(255, 150, 230, 0.85);
+        opacity: 0;
+        animation: flotar linear infinite;
+    }
+
+    .estrella.oro {
+        background-image: radial-gradient(
+            circle,
+            #ffffff 0%,
+            rgba(255, 225, 160, 0.9) 40%,
+            rgba(255, 200, 110, 0) 72%
+        );
+        box-shadow: 0 0 6px rgba(255, 215, 140, 0.85);
+    }
+
+    @keyframes flotar {
+        0% {
+            transform: translate(0, 0) scale(0.6);
+            opacity: 0;
+        }
+        10% {
+            opacity: 0.95;
+        }
+        50% {
+            transform: translate(var(--deriva), -50cqh) scale(1);
+        }
+        85% {
+            opacity: 0.6;
+        }
+        100% {
+            transform: translate(calc(var(--deriva) * -0.5), -100cqh)
+                scale(0.8);
+            opacity: 0;
+        }
+    }
+
+    .destello,
+    .destello-titulo {
+        position: absolute;
+        transform: translate(-50%, -50%) scale(0);
+        animation: titilar ease-in-out infinite;
+    }
+
+    .destello::before,
+    .destello::after,
+    .destello-titulo::before,
+    .destello-titulo::after {
+        content: "";
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        border-radius: 50%;
+        transform: translate(-50%, -50%);
+        background-image: radial-gradient(
+            ellipse,
+            #fff 0%,
+            rgba(255, 222, 150, 0.9) 35%,
+            rgba(255, 222, 150, 0) 70%
+        );
+    }
+
+    .destello::before,
+    .destello-titulo::before {
+        width: 100%;
+        height: 18%;
+    }
+
+    .destello::after,
+    .destello-titulo::after {
+        width: 18%;
+        height: 100%;
+    }
+
+    @keyframes titilar {
+        0%,
+        100% {
+            transform: translate(-50%, -50%) scale(0);
+            opacity: 0;
+        }
+        50% {
+            transform: translate(-50%, -50%) scale(1.5);
+            opacity: 1;
+        }
+    }
+
+    /* ── Título ─────────────────────────────────────────────── */
+    .titulo-caja {
+        position: relative;
+        width: 100%;
+    }
+
+    /* El destello grande al costado del título, como en el diseño */
+    .destello-titulo {
+        left: 11%;
+        top: 42%;
+        width: 9cqw;
+        height: 9cqw;
+        animation-duration: 3.2s;
+    }
+
+    /* Great Vibes, sin mayúsculas forzadas ni espaciado entre letras */
+    .titulo {
+        margin: 0;
+        padding: 0 4%;
+        font-family: "Great Vibes", cursive;
+        font-weight: 400;
+        font-size: 15cqw;
+        line-height: 1.15;
+        background-image: linear-gradient(
+            180deg,
+            #fff3cf 0%,
+            #f1cb7a 50%,
+            #b98a3e 100%
+        );
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.6))
+            drop-shadow(0 0 14px rgba(255, 120, 230, 0.5));
+    }
+
+    /* ── Tarjeta ────────────────────────────────────────────── */
+    .tarjeta-caja {
+        position: relative;
+        width: 82%;
+        margin-top: 4cqw;
+    }
+
+    /*
+       Lavanda casi blanca con filete dorado doble, como en el diseño. Va
+       como degradado y no como color: el modo oscuro forzado oscurece
+       colores pero respeta las imágenes.
+    */
+    .tarjeta {
+        position: relative;
+        padding: 5.5cqw 5.5cqw 7cqw;
+        border-radius: 4cqw;
+        background-image: linear-gradient(
+            165deg,
+            rgba(252, 248, 255, 0.97) 0%,
+            rgba(238, 226, 252, 0.96) 100%
+        );
+        border: 1.5px solid #e2bb6c;
+        box-shadow:
+            inset 0 0 0 4px rgba(252, 248, 255, 0.9),
+            inset 0 0 0 5px rgba(226, 187, 108, 0.6),
+            0 16px 36px rgba(0, 0, 0, 0.45),
+            0 0 34px rgba(255, 110, 220, 0.35);
+        color: #3d1763;
+    }
+
+    /* Foto del salón con marco dorado */
+    .foto-marco {
+        margin-bottom: 5cqw;
+        padding: 1.2cqw;
+        border-radius: 3cqw;
+        background-image: linear-gradient(
+            135deg,
+            #f3d58f,
+            #b98a3e,
+            #f3d58f
+        );
+        box-shadow: 0 8px 18px rgba(60, 20, 90, 0.3);
+    }
+
+    .foto {
+        display: block;
+        width: 100%;
+        aspect-ratio: 3 / 2;
+        object-fit: cover;
+        border-radius: 2.2cqw;
+    }
+
+    /*
+       "Salón de eventos" y el nombre van juntos y al mismo tamaño: se leen
+       como una sola frase. El nombre se distingue solo por el color.
+    */
+    .salon {
+        margin: 0;
+        font-family: "Cormorant Garamond", serif;
+        font-weight: 700;
+        font-size: 7cqw;
+        line-height: 1.2;
+        color: #4a1a78;
+    }
+
+    .salon .nombre {
+        white-space: nowrap;
+        background-image: linear-gradient(180deg, #9a3fe0 0%, #5b1a96 100%);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+    }
+
+    /* Filete dorado con un rombito al medio */
+    .adorno {
+        position: relative;
+        display: block;
+        width: 46%;
+        height: 1px;
+        margin: 3.2cqw auto 4cqw;
+        background-image: linear-gradient(
+            90deg,
+            rgba(185, 138, 62, 0),
+            rgba(185, 138, 62, 0.95),
+            rgba(185, 138, 62, 0)
+        );
+    }
+
+    .adorno i {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        width: 2cqw;
+        height: 2cqw;
+        transform: translate(-50%, -50%) rotate(45deg);
+        background-image: linear-gradient(135deg, #f3d58f, #b98a3e);
+    }
+
+    .direccion {
+        margin: 0;
+        font-family: "Cormorant Garamond", serif;
+        font-weight: 600;
+        font-size: 5.5cqw;
+        line-height: 1.3;
+        color: #3d1763;
+    }
+
+    /*
+       La hora resalta solo con un trazo dorado fino alrededor, sin
+       relleno: así no se confunde con el botón, que sí es violeta lleno.
+    */
+    .hora {
+        margin: 4.5cqw 0 0;
+    }
+
+    .hora span {
+        display: inline-block;
+        padding: 1.2cqw 6cqw;
+        border-radius: 999px;
+        font-family: "Cormorant Garamond", serif;
+        font-weight: 700;
+        font-size: 6.6cqw;
+        line-height: 1.1;
+        color: #5a1f96;
+        border: 1.5px solid #d9ad57;
+    }
+
+    /* ── Pin + botón ────────────────────────────────────────── */
+    .pin {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 11cqw;
+        height: 11cqw;
+        margin: 5cqw auto 0;
+        border-radius: 50%;
+        background-image: linear-gradient(180deg, #9a55d8, #5b1a96);
+        border: 1.5px solid #e2bb6c;
+        box-shadow: 0 4px 12px rgba(80, 20, 130, 0.4);
+    }
+
+    .pin svg {
+        width: 5.6cqw;
+        height: 5.6cqw;
+        fill: #fff4d8;
+    }
+
+    /*
+       Botón: violeta profundo con doble filete dorado, un brillo que lo
+       recorre cada tanto y un resplandor que late suave para invitar a
+       tocarlo.
+    */
+    .boton {
+        position: relative;
+        overflow: hidden;
+        display: inline-block;
+        margin-top: 3cqw;
+        padding: 3cqw 10cqw;
+        border-radius: 999px;
+        font-family: "Cormorant Garamond", serif;
+        font-weight: 700;
+        font-size: 5.8cqw;
+        letter-spacing: 0.02em;
+        color: #fff4d8;
+        text-decoration: none;
+        text-shadow: 0 1px 3px rgba(30, 0, 60, 0.6);
+        background-image:
+            radial-gradient(
+                ellipse at 50% 0%,
+                rgba(255, 255, 255, 0.28) 0%,
+                rgba(255, 255, 255, 0) 60%
+            ),
+            linear-gradient(180deg, #9447d8 0%, #5b1a96 55%, #3a0c66 100%);
+        border: 1.5px solid #f0cf86;
+        box-shadow:
+            inset 0 0 0 3px rgba(58, 12, 102, 0.9),
+            inset 0 0 0 4px rgba(240, 207, 134, 0.55),
+            0 8px 18px rgba(60, 15, 100, 0.45),
+            0 0 18px rgba(190, 90, 255, 0.55);
+        animation: resplandor 2.8s ease-in-out infinite;
+        transition: transform 0.25s ease;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    /* El brillo que cruza el botón */
+    .boton::after {
+        content: "";
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: -60%;
+        width: 40%;
+        background-image: linear-gradient(
+            100deg,
+            rgba(255, 255, 255, 0) 0%,
+            rgba(255, 244, 216, 0.55) 50%,
+            rgba(255, 255, 255, 0) 100%
+        );
+        transform: skewX(-20deg);
+        animation: cruzar 4s ease-in-out infinite;
+        pointer-events: none;
+    }
+
+    @keyframes cruzar {
+        0% {
+            left: -60%;
+        }
+        40%,
+        100% {
+            left: 130%;
+        }
+    }
+
+    @keyframes resplandor {
+        0%,
+        100% {
+            box-shadow:
+                inset 0 0 0 3px rgba(58, 12, 102, 0.9),
+                inset 0 0 0 4px rgba(240, 207, 134, 0.55),
+                0 8px 18px rgba(60, 15, 100, 0.45),
+                0 0 14px rgba(190, 90, 255, 0.45);
+        }
+        50% {
+            box-shadow:
+                inset 0 0 0 3px rgba(58, 12, 102, 0.9),
+                inset 0 0 0 4px rgba(240, 207, 134, 0.55),
+                0 8px 18px rgba(60, 15, 100, 0.45),
+                0 0 26px rgba(210, 120, 255, 0.8);
+        }
+    }
+
+    .boton:hover {
+        transform: translateY(-2px) scale(1.03);
+    }
+
+    .boton:active {
+        transform: scale(0.97);
+    }
+
+    /* ── Manzana en la esquina ──────────────────────────────── */
+    /*
+       Montada sobre la esquina de abajo a la derecha de la tarjeta y un
+       poco afuera, como en el diseño. Flota apenas.
+    */
+    .manzana {
+        position: absolute;
+        right: -9cqw;
+        bottom: -12cqw;
+        width: 27cqw;
+        height: auto;
+        z-index: 2;
+        pointer-events: none;
+        user-select: none;
+        filter: drop-shadow(0 8px 14px rgba(0, 0, 0, 0.5))
+            drop-shadow(0 0 12px rgba(255, 80, 80, 0.35));
+        animation: flotarManzana 4s ease-in-out infinite;
+    }
+
+    @keyframes flotarManzana {
+        0%,
+        100% {
+            transform: translateY(0) rotate(-3deg);
+        }
+        50% {
+            transform: translateY(-6px) rotate(2deg);
+        }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .estrella {
+            display: none;
+        }
+        .destello,
+        .destello-titulo {
+            animation: none;
+            transform: translate(-50%, -50%) scale(1);
+            opacity: 0.7;
+        }
+        .manzana,
+        .boton,
+        .boton::after {
+            animation: none;
+        }
+    }
+</style>
+
+<script>
+    import { gsap } from "gsap";
+    import { ScrollTrigger } from "gsap/ScrollTrigger";
+
+    gsap.registerPlugin(ScrollTrigger);
+
+    document.addEventListener("DOMContentLoaded", () => {
+        const contenido = document.getElementById("rec-contenido");
+        if (
+            !contenido ||
+            window.matchMedia("(prefers-reduced-motion: reduce)").matches
+        )
+            return;
+
+        // El título y la tarjeta aparecen subiendo al llegar a la sección
+        gsap.fromTo(
+            Array.from(contenido.children),
+            { opacity: 0, y: 24 },
+            {
+                opacity: 1,
+                y: 0,
+                duration: 1,
+                stagger: 0.2,
+                ease: "power2.out",
+                scrollTrigger: {
+                    trigger: contenido,
+                    start: "top 80%",
+                    toggleActions: "play none none reset",
+                },
+            },
+        );
+    });
+</script>

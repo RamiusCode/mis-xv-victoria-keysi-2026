@@ -1,0 +1,133 @@
+---
+// src/components/NombresFlores.astro
+// Primera sección después de la portada: el video de intro (nombre de la
+// quinceañera + castillo) ocupando la pantalla entera.
+//
+// El video ya trae el nombre adentro, por eso acá no va texto aparte.
+//
+// Archivos:
+//   /imagenes/intro.mp4          720x1280, sin audio, ~470 KB (la música
+//                                ya suena desde la portada)
+//   /imagenes/intro-poster.webp  primer cuadro: se ve mientras el video carga
+//   /imagenes/videointro.mp4     original de 6 MB, queda solo de respaldo
+---
+
+<section id="sobre-novios" class="seccion">
+    <video
+        id="nf-video"
+        class="video"
+        src="/imagenes/intro.mp4"
+        poster="/imagenes/intro-poster.webp"
+        width="720"
+        height="1280"
+        muted
+        loop
+        autoplay
+        playsinline
+        preload="auto"
+        disablepictureinpicture
+        aria-label="Victoria Keysi, mis XV años"
+    ></video>
+</section>
+
+<style>
+    /*
+       El fondo va declarado como degradado y no como color: el modo
+       oscuro forzado oscurece colores pero respeta las imágenes.
+    */
+    .seccion {
+        position: relative;
+        width: 100%;
+        overflow: hidden;
+        background-image: linear-gradient(#12041c, #12041c);
+    }
+
+    /*
+       Fundido de abajo: el video termina en cielo rosado a los costados y
+       la Dedicatoria arranca con un borde negro. Este degradado lleva el
+       final del video a ese mismo negro, así no se nota el corte entre
+       las dos secciones.
+    */
+    .seccion::after {
+        content: "";
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        height: 14%;
+        pointer-events: none;
+        background-image: linear-gradient(
+            180deg,
+            rgba(8, 2, 12, 0) 0%,
+            rgba(8, 2, 12, 0.55) 45%,
+            rgba(8, 2, 12, 0.92) 80%,
+            #08020c 100%
+        );
+    }
+
+    /*
+       El video se muestra ENTERO, con su ancho completo: el alto sale de
+       su propia proporción (9:16), sin recortar los costados. En un
+       celular largo puede quedar más bajo que la pantalla; está bien así,
+       la sección siguiente empieza donde termina el video.
+    */
+    .video {
+        display: block;
+        width: 100%;
+        height: auto;
+        aspect-ratio: 9 / 16;
+        pointer-events: none;
+        user-select: none;
+    }
+</style>
+
+<script>
+    import { gsap } from "gsap";
+
+    document.addEventListener("DOMContentLoaded", () => {
+        const video = document.getElementById("nf-video") as
+            | HTMLVideoElement
+            | null;
+        if (!video) return;
+
+        const reproducir = () => {
+            video.currentTime = 0;
+            video.play().catch(() => {});
+        };
+
+        const menosMovimiento = window.matchMedia(
+            "(prefers-reduced-motion: reduce)",
+        ).matches;
+
+        /*
+           Con portada, el video espera tapado y arranca desde el primer
+           cuadro recién cuando se abre el sobre: si no, el invitado se lo
+           perdería mientras mira la portada.
+        */
+        function arrancar() {
+            reproducir();
+            if (!menosMovimiento) {
+                gsap.fromTo(
+                    video,
+                    { opacity: 0, scale: 1.06 },
+                    { opacity: 1, scale: 1, duration: 1.4, ease: "power2.out" },
+                );
+            }
+        }
+
+        const portada = document.getElementById("portada-section");
+
+        if ((window as any).portadaAbierta) {
+            // El script de la portada corrió antes que este y ya avisó
+            arrancar();
+        } else if (portada) {
+            video.pause();
+            window.addEventListener("portada-abierta", arrancar, {
+                once: true,
+            });
+        } else {
+            // Sin portada: el video arranca solo (autoplay)
+            reproducir();
+        }
+    });
+</script>
